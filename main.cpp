@@ -1,37 +1,38 @@
-#include <iostream>
 #include<vector>
-#include <GL/glew.h>
-#include <GL/freeglut.h>
-
 #include "GLSLShader.h"
 #include "texture.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <QImage>
-#include <QGLWidget>
 
-Texture text;
-int shaderNum;
-GLuint vao;             // Le handle du VAO.
-GLuint vbo_positions;   // Le handle du VBO.
-GLuint vbo_indices;     // Le handle du VBO.
-GLSLShader shader;
-GLint winHeight, winWidth;//resolution de la fenetre
+Texture text;               // Objet gerant les textures
+int shaderNum;              // Retient le shader a utiliser
+GLuint vao;                 // Le handle du VAO.
+GLuint vbo_positions;       // Le handle du VBO.
+GLuint vbo_indices;         // Le handle du VBO.
+GLSLShader shader;          // Objet gerant les shaders
+GLint winHeight, winWidth;  // Resolution de la fenetre
+GLfloat mouseCoord[4];
 
 float elapsed_time, time0;  // temps en secondes
 
 // Fonction d'initialisation, appelée une fois en début de programme.
 static void init(void)
 {
-  text.load("images/brick_grise.jpg");
-  text.load("images/brick_rouge.jpg");
+  //On charge les images
+  text.load(QString("images/brick_grise.jpg"));
+  text.load(QString("images/brick_rouge.jpg"));
+  text.load(QString("images/uppa.gif"));
+  text.load(QString("images/om.gif"));
 
+  //On definie les valeurs par defaut des uniform
   winHeight = 1000;
   winWidth = 500;
+  mouseCoord[0] = 0.;
+  mouseCoord[1] = 0.;
+  mouseCoord[2] = 0.;
+  mouseCoord[3] = 0.;
 
-  string fs;
+  //On choisit le fragment shader
+  QString fs;
   switch(shaderNum)
   {
     case 1:
@@ -53,7 +54,7 @@ static void init(void)
 
   // Création des shaders depuis des fichiers sur le disque
   shader.LoadFromFile(GL_VERTEX_SHADER,   "shaders/shadertoy.vert.glsl");
-  shader.LoadFromFile(GL_FRAGMENT_SHADER, fs);
+  shader.LoadFromFile(GL_FRAGMENT_SHADER, fs.toStdString());
   shader.CreateAndLinkProgram();
   shader.AddUniform("iGlobalTime");
   shader.AddUniform("iResolution");
@@ -98,9 +99,9 @@ void display(void)
   glClear(GL_COLOR_BUFFER_BIT); // On efface la fenêtre.
   glUniform1f(shader("iGlobalTime"), elapsed_time);
   glUniform3f(shader("iResolution"), winWidth, winHeight, 1.0);
-
+  glUniform4f(shader("iMouse"), mouseCoord[0], mouseCoord[1], mouseCoord[2], mouseCoord[3]);
   glUniform1i(shader("iChannel0"), 3);
-  glBindSampler(3, samplerState); // utilise samplerState pour UT3
+  glBindSampler(3, text.getSamplerState()); // utilise samplerState pour UT3
   glActiveTexture(GL_TEXTURE3);   // Active l'unité de texture 3
   glBindTexture(GL_TEXTURE_2D, text.getText());
 
@@ -112,6 +113,8 @@ void display(void)
   shader.UnUse();
 }
 
+
+//Procedure appele si la fenetre est redimensionne
 void reshape(GLint width, GLint height)
 {
   glViewport(0, 0, width, height);
@@ -119,6 +122,7 @@ void reshape(GLint width, GLint height)
   winWidth = width;
 }
 
+//Calcul du temps ecoule
 void animate()
 {
   elapsed_time = glutGet(GLUT_ELAPSED_TIME)/1000. - time0;
@@ -134,6 +138,7 @@ static void freeResources(void)
   glDeleteVertexArrays(1, &vao);      // Et on supprime le nôtre.
 }
 
+//Event clavier
 void keyboard(unsigned char key, int x, int y)
 {
     switch(key)
@@ -154,14 +159,38 @@ void keyboard(unsigned char key, int x, int y)
     }
 }
 
+
+//Event souris
+void mouse(int button, int state, int x, int y)
+{
+    if((button == GLUT_LEFT_BUTTON) && (state == GLUT_UP))
+    {
+        mouseCoord[0]=0.;
+        mouseCoord[1]=0.;
+        mouseCoord[2]=0.;
+        mouseCoord[3]=0.;
+    }
+}
+
+//Event mouvement souris
+void motion(int x, int y)
+{
+    mouseCoord[0]=(float)x;
+    mouseCoord[1]=(float)(winHeight-y);
+    mouseCoord[2]=1.;
+    mouseCoord[3]=0.;
+}
+
 int main(int argc, char* argv[])
 {
+    //On verifie que le nombre d'arguments soit correct
     if(argc == 1)
         shaderNum == 1;
     else
     {
         if(argc == 2)
         {
+            //On verifie que la variable envoye est un entier compris entre 0 et 5 non inclus sinon on met une valeur par defaut
             int valeur = 0;
             valeur = QString(QString::fromStdString(argv[1])).toInt();
             if((valeur < 5) && (valeur > 0))
@@ -178,9 +207,8 @@ int main(int argc, char* argv[])
 
   glutInitContextVersion(3, 3);
   glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
-  glutInitContextProfile(GLUT_CORE_PROFILE); glewExperimental=true; // Astuce en attendant que GLEW
-                                                                    // supporte le profile "core"
-  //glutInitContextProfile(GLUT_COMPATIBILITY_PROFILE);             // ou ligne à utiliser sinon
+  glutInitContextProfile(GLUT_CORE_PROFILE);
+  glewExperimental=true;
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
   glutInitWindowSize(1000, 500);
@@ -191,6 +219,8 @@ int main(int argc, char* argv[])
   glutReshapeFunc(reshape);
   glutIdleFunc(animate);
   glutKeyboardFunc(keyboard);
+  glutMouseFunc(mouse);
+  glutMotionFunc(motion);
   glutMainLoop();
   freeResources();
   return 0;

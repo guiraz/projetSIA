@@ -5,11 +5,11 @@ Texture::Texture()
     _current = 0;
 }
 
-void Texture::load(QString & url)
+void Texture::load(QString url)
 {
     _url.append(url);
-    _texName.clear();
-    glGenTextures(_url.size(), texName);
+    _texName = new GLuint[_url.size()];
+    glGenTextures(_url.size(), _texName);
     for(int i=0; i<_url.size(); i++)
     {
         QImage* img = loadImage(_url[i]);
@@ -48,11 +48,19 @@ GLuint Texture::getText()
     return _texName[_current];
 }
 
+GLuint Texture::getSamplerState()
+{
+    return _samplerState;
+}
+
 QImage* Texture::loadImage(QString & filename)
 {
-  QImage img(filename);
-  if (img.isNull()) {
-    cerr << "Unable to load " << filename.toStdString() << endl; return NULL; }
-  cout << "Loading " << filename.toStdString() << ", "<< img.width() << "x" << img.height() << " pixels" << endl;
-  return new QImage(QGLWidget::convertToGLFormat(img));
+    QImage img(filename);
+    if (img.isNull())
+    {
+        cerr << "Unable to load " << filename.toStdString() << endl;
+        return NULL;
+    }
+    cout << "Loading " << filename.toStdString() << ", "<< img.width() << "x" << img.height() << " pixels" << endl;
+    return new QImage(QGLWidget::convertToGLFormat(img));
 }
