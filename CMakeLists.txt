@@ -11,7 +11,7 @@ set(QT_USE_QTXML 1)
 set(QT_USE_QTOPENGL 1)
 include(${QT_USE_FILE})
 
-add_executable(main  main.cpp GLSLShader.cpp)
+add_executable(main  main.cpp GLSLShader.cpp texture.cpp)
 target_link_libraries(main ${GLUT_LIBRARIES} GLEW ${OPENGL_LIBRARIES} ${QT_LIBRARIES})
 
 # add a symbolic link toward the shaders in the source directory

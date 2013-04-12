@@ -2,16 +2,18 @@
 #include<vector>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
+
 #include "GLSLShader.h"
+#include "texture.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <QImage>
 #include <QGLWidget>
 
-#define NUMFRAG 2
-
-GLuint textNum;
+Texture text;
+int shaderNum;
 GLuint vao;             // Le handle du VAO.
 GLuint vbo_positions;   // Le handle du VBO.
 GLuint vbo_indices;     // Le handle du VBO.
@@ -20,57 +22,17 @@ GLint winHeight, winWidth;//resolution de la fenetre
 
 float elapsed_time, time0;  // temps en secondes
 
-QImage* loadImage(std::string filename)
-{
-  QImage img(filename.c_str());
-
-  if (img.isNull()) {
-    cerr << "Unable to load " << filename << endl; return NULL; }
-
-  cout << "Loading " << filename << ", "
-       << img.width() << "x" << img.height() << " pixels" << endl;
-
-  // Convertit l'image dans un format utilisable par OpenGL
-  return new QImage(QGLWidget::convertToGLFormat(img));
-}
-
 // Fonction d'initialisation, appelée une fois en début de programme.
 static void init(void)
 {
-  // Charge la texture
-  QImage* img = loadImage("images/brick_grise.jpg");
-  // Generate one texture objects
-  glGenTextures(2, texName);
-  if (img != NULL) {
-    glBindTexture(GL_TEXTURE_2D, texName[0]);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA, img->width(),img->height(),0, GL_RGBA,GL_UNSIGNED_BYTE, img->bits());
-  }
-  img=NULL;
-  img = loadImage("images/brick_rouge.jpg");
-  if (img != NULL) {
-    glBindTexture(GL_TEXTURE_2D, texName[1]);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA, img->width(),img->height(),0, GL_RGBA,GL_UNSIGNED_BYTE, img->bits());
-  }
-  delete img;
-
-  glGenSamplers(3, &samplerState);
-  glSamplerParameteri(samplerState, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glSamplerParameteri(samplerState, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  glSamplerParameteri(samplerState, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glSamplerParameteri(samplerState, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glSamplerParameterf(samplerState, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
-
-  textNum = 0;
+  text.load("images/brick_grise.jpg");
+  text.load("images/brick_rouge.jpg");
 
   winHeight = 1000;
   winWidth = 500;
 
   string fs;
-  switch(NUMFRAG)
+  switch(shaderNum)
   {
     case 1:
       fs="shaders/shadertoy_1.frag.glsl";
@@ -98,8 +60,6 @@ static void init(void)
   shader.AddUniform("iMouse");
   shader.AddUniform("iChannel0");
   shader.AddAttribute("position");
-
-
 
   // Créations des buffers
   GLfloat positions[] = {-2,2, -2,-2, 2,2, 2,-2};
@@ -142,7 +102,7 @@ void display(void)
   glUniform1i(shader("iChannel0"), 3);
   glBindSampler(3, samplerState); // utilise samplerState pour UT3
   glActiveTexture(GL_TEXTURE3);   // Active l'unité de texture 3
-  glBindTexture(GL_TEXTURE_2D, texName[textNum]);
+  glBindTexture(GL_TEXTURE_2D, text.getText());
 
   glBindVertexArray(vao);
   glDrawElements(GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_INT, 0);
@@ -179,10 +139,13 @@ void keyboard(unsigned char key, int x, int y)
     switch(key)
     {
         case 'g':
-            textNum = 0;
+            text.setCurrent(0);
         break;
         case 'r':
-            textNum = 1;
+            text.setCurrent(1);
+        break;
+        case '+':
+            text.next();
         break;
         case 27:
             freeResources();
@@ -193,6 +156,26 @@ void keyboard(unsigned char key, int x, int y)
 
 int main(int argc, char* argv[])
 {
+    if(argc == 1)
+        shaderNum == 1;
+    else
+    {
+        if(argc == 2)
+        {
+            int valeur = 0;
+            valeur = QString(QString::fromStdString(argv[1])).toInt();
+            if((valeur < 5) && (valeur > 0))
+                shaderNum = valeur;
+            else
+                shaderNum == 1;
+        }
+        else
+        {
+            cerr<<"Erreur : Nombre d'arguments incorrects."<<endl;
+            exit(0);
+        }
+    }
+
   glutInitContextVersion(3, 3);
   glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
   glutInitContextProfile(GLUT_CORE_PROFILE); glewExperimental=true; // Astuce en attendant que GLEW
