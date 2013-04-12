@@ -12,8 +12,6 @@
 #define NUMFRAG 2
 
 GLuint textNum;
-GLuint texName[3];      // ID de la texture
-GLuint samplerState;    // ID  du  sampler
 GLuint vao;             // Le handle du VAO.
 GLuint vbo_positions;   // Le handle du VBO.
 GLuint vbo_indices;     // Le handle du VBO.
