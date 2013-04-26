@@ -1,14 +1,17 @@
 #include<vector>
+#include <QStringList>
+#include <QDebug>
 #include "GLSLShader.h"
 #include "texture.h"
 
 
 Texture text;               // Objet gerant les textures
-int shaderNum;              // Retient le shader a utiliser
+int currentShader;
+int shaderCount;
 GLuint vao;                 // Le handle du VAO.
 GLuint vbo_positions;       // Le handle du VBO.
 GLuint vbo_indices;         // Le handle du VBO.
-GLSLShader shader;          // Objet gerant les shaders
+GLSLShader * shader;          // Objet gerant les shaders
 GLint winHeight, winWidth;  // Resolution de la fenetre
 GLfloat mouseCoord[4];
 
@@ -31,36 +34,30 @@ static void init(void)
   mouseCoord[2] = 0.;
   mouseCoord[3] = 0.;
 
-  //On choisit le fragment shader
-  QString fs;
-  switch(shaderNum)
+  QStringList listShader;
+  listShader.append("shaders/shadertoy_1.frag.glsl");
+  listShader.append("shaders/shadertoy_2.frag.glsl");
+  listShader.append("shaders/shadertoy_3.frag.glsl");
+  listShader.append("shaders/shadertoy_4.frag.glsl");
+
+  shaderCount = listShader.size();
+
+  shader = new GLSLShader[shaderCount];
+
+  for(int i=0; i<shaderCount; i++)
   {
-    case 1:
-      fs="shaders/shadertoy_1.frag.glsl";
-    break;
-    case 2:
-      fs="shaders/shadertoy_2.frag.glsl";
-    break;
-    case 3:
-      fs="shaders/shadertoy_3.frag.glsl";
-    break;
-    case 4:
-      fs="shaders/shadertoy_4.frag.glsl";
-    break;
-    default:
-      fs="shaders/shadertoy_1.frag.glsl";
-    break;
+      // Création des shaders depuis des fichiers sur le disque
+      shader[i].LoadFromFile(GL_VERTEX_SHADER,   "shaders/shadertoy.vert.glsl");
+      shader[i].LoadFromFile(GL_FRAGMENT_SHADER, listShader.at(i).toStdString());
+      shader[i].CreateAndLinkProgram();
+      shader[i].AddUniform("iGlobalTime");
+      shader[i].AddUniform("iResolution");
+      shader[i].AddUniform("iMouse");
+      shader[i].AddUniform("iChannel0");
+      shader[i].AddAttribute("position");
   }
 
-  // Création des shaders depuis des fichiers sur le disque
-  shader.LoadFromFile(GL_VERTEX_SHADER,   "shaders/shadertoy.vert.glsl");
-  shader.LoadFromFile(GL_FRAGMENT_SHADER, fs.toStdString());
-  shader.CreateAndLinkProgram();
-  shader.AddUniform("iGlobalTime");
-  shader.AddUniform("iResolution");
-  shader.AddUniform("iMouse");
-  shader.AddUniform("iChannel0");
-  shader.AddAttribute("position");
+  currentShader = 0;
 
   // Créations des buffers
   GLfloat positions[] = {-2,2, -2,-2, 2,2, 2,-2};
@@ -78,8 +75,8 @@ static void init(void)
   glBindVertexArray(vao);       // Il devient le VAO courant.
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo_positions);
-  glEnableVertexAttribArray(shader["position"]);
-  glVertexAttribPointer(shader["position"], 2, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(shader[0]["position"]);
+  glVertexAttribPointer(shader[0]["position"], 2, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo_indices);
 
@@ -94,13 +91,13 @@ static void init(void)
 // Fonction d'affichage, appelée régulièrement, pour réafficher le contenu.
 void display(void)
 {
-  shader.Use();
+  shader[currentShader].Use();
 
   glClear(GL_COLOR_BUFFER_BIT); // On efface la fenêtre.
-  glUniform1f(shader("iGlobalTime"), elapsed_time);
-  glUniform3f(shader("iResolution"), winWidth, winHeight, 1.0);
-  glUniform4f(shader("iMouse"), mouseCoord[0], mouseCoord[1], mouseCoord[2], mouseCoord[3]);
-  glUniform1i(shader("iChannel0"), 3);
+  glUniform1f(shader[currentShader]("iGlobalTime"), elapsed_time);
+  glUniform3f(shader[currentShader]("iResolution"), winWidth, winHeight, 1.0);
+  glUniform4f(shader[currentShader]("iMouse"), mouseCoord[0], mouseCoord[1], mouseCoord[2], mouseCoord[3]);
+  glUniform1i(shader[currentShader]("iChannel0"), 3);
   glBindSampler(3, text.getSamplerState()); // utilise samplerState pour UT3
   glActiveTexture(GL_TEXTURE3);   // Active l'unité de texture 3
   glBindTexture(GL_TEXTURE_2D, text.getText());
@@ -110,7 +107,7 @@ void display(void)
   glBindVertexArray(0);
   glutSwapBuffers(); // Echange des buffers FRONT et BACK.
 
-  shader.UnUse();
+  shader[currentShader].UnUse();
 }
 
 
@@ -152,6 +149,10 @@ void keyboard(unsigned char key, int x, int y)
         case '+':
             text.next();
         break;
+        case 32:
+            currentShader++;
+            currentShader %= shaderCount;
+        break;
         case 27:
             freeResources();
             exit(0);
@@ -183,28 +184,6 @@ void motion(int x, int y)
 
 int main(int argc, char* argv[])
 {
-    //On verifie que le nombre d'arguments soit correct
-    if(argc == 1)
-        shaderNum == 1;
-    else
-    {
-        if(argc == 2)
-        {
-            //On verifie que la variable envoye est un entier compris entre 0 et 5 non inclus sinon on met une valeur par defaut
-            int valeur = 0;
-            valeur = QString(QString::fromStdString(argv[1])).toInt();
-            if((valeur < 5) && (valeur > 0))
-                shaderNum = valeur;
-            else
-                shaderNum == 1;
-        }
-        else
-        {
-            cerr<<"Erreur : Nombre d'arguments incorrects."<<endl;
-            exit(0);
-        }
-    }
-
   glutInitContextVersion(3, 3);
   glutInitContextFlags(GLUT_FORWARD_COMPATIBLE | GLUT_DEBUG);
   glutInitContextProfile(GLUT_CORE_PROFILE);

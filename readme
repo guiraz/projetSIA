@@ -7,13 +7,13 @@ PRINCIPLE : Creates an application generating a window displaying two triangles 
 
 COMPILATION : use the CMakeLists.txt to generate a MAKEFILE with cmake
 
-EXECUTION : ./main [shader_index]
-                where shader_index is the index of the wanted to be display shader, between 1 and the amount of available shaders
+EXECUTION : ./main
                 
-KEY EVENT : 'r' -> Change to grey brick texture
-            'g' -> Change to red brick texture
-            '+' -> change to next texture
+KEY EVENT : 'r'         -> Change to grey brick texture
+            'g'         -> Change to red brick texture
+            '+'         -> change to next texture
             'ECHAP_KEY' -> exit program
+            'SPACE_KEY' -> change shader
             
 MOUSE EVENT : some shaders uses mouse event.
 
