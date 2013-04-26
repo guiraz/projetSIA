@@ -1,6 +1,5 @@
 #include<vector>
 #include <QStringList>
-#include <QDebug>
 #include "GLSLShader.h"
 #include "texture.h"
 
