@@ -2,7 +2,7 @@ NAME : Projet SIA (ShaderToy)
 AUTHOR : Guillaume RAZIMBAUD
 DATE : 05/04/2013
 
-PRINCIPLE : Create an application generating a window displaying two triangles that fills entierly the window.
+PRINCIPLE : Creates an application generating a window displaying two triangles that fills entierly the window.
             Thereby we can apply GLSL fragment shaders from the website www.shadertoy.com on those triangles.
 
 COMPILATION : use the CMakeLists.txt to generate a MAKEFILE with cmake
@@ -15,6 +15,6 @@ KEY EVENT : 'r' -> Change to grey brick texture
             '+' -> change to next texture
             'ECHAP_KEY' -> exit program
             
-MOUSE EVENT : some shader use mouse event.
+MOUSE EVENT : some shaders uses mouse event.
 
 SHADERS: most of shaders were taken directly from the website but the last one is from my creation. :)
