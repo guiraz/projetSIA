@@ -9,3 +9,12 @@ COMPILATION : use the CMakeLists.txt to generate a MAKEFILE with cmake
 
 EXECUTION : ./main [shader_index]
                 where shader_index is the index of the wanted to be display shader, between 1 and the amount of available shaders
+                
+KEY EVENT : 'r' -> Change to grey brick texture
+            'g' -> Change to red brick texture
+            '+' -> change to next texture
+            'ECHAP_KEY' -> exit program
+            
+MOUSE EVENT : some shader use mouse event.
+
+SHADERS: most of shaders were taken directly from the website but the last one is from my creation. :)
